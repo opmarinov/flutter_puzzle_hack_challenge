@@ -1,0 +1,6 @@
+package com.puzzle.flutter_puzzle_hack_challenge
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity: FlutterActivity() {
+}
