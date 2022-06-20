@@ -62,7 +62,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-
     if (listComparator.equals(blocks, sorted)) {
       isOver = true;
     }
@@ -70,14 +69,15 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       body: OrientationBuilder(
         builder: (context, orientation) {
-
           double screenSize = MediaQuery.of(context).size.width;
           double boxSize = screenSize * 0.2;
 
-          if(orientation == Orientation.landscape) {
+          if (orientation == Orientation.landscape) {
             screenSize = MediaQuery.of(context).size.height;
             boxSize = screenSize * 0.8;
           }
+
+          var careForOrientation = false;
 
           return ResponsiveBuilder(
             builder: (context, sizingInformation) {
@@ -89,6 +89,7 @@ class _MyHomePageState extends State<MyHomePage> {
               if (sizingInformation.deviceScreenType ==
                   DeviceScreenType.tablet) {
                 boxSize = screenSize * 0.6;
+                careForOrientation = true;
               }
 
               if (sizingInformation.deviceScreenType ==
@@ -96,7 +97,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 boxSize = screenSize * 0.8;
               }
 
-              return _buildBody(boxSize);
+              return _buildBody(boxSize, careForOrientation);
             },
           );
         },
@@ -218,7 +219,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  _buildBody(double boxSize) {
+  _buildBody(double boxSize, orientation) {
     return Stack(
       children: [
         Container(
@@ -227,38 +228,47 @@ class _MyHomePageState extends State<MyHomePage> {
             border: Border.all(color: Colors.black, width: 1),
           ),
         ),
-
-        Positioned(
-          bottom: MediaQuery.of(context).size.height - 250,
-          child: Container(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Puzzle\nChallenge',
-                  style: TextStyle(fontSize: 40),
+        SizedBox(
+          width: MediaQuery.of(context).size.width,
+          height: MediaQuery.of(context).size.height,
+          child: orientation
+              ? Row(
+                  // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Expanded(
+                      child: _buildTextRow(),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Colors.transparent,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildPuzzleModeButtons(),
+                            const SizedBox(
+                              height: 20.0,
+                            ),
+                            _buildPuzzleBlocks(boxSize),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: _buildBodyV2(boxSize)
+                    ..insert(
+                      0,
+                      _buildPuzzleModeButtons(),
+                    ),
                 ),
-                const SizedBox(
-                  height: 10,
-                ),
-                _buildMoveInfoText(),
-                const SizedBox(
-                  height: 20,
-                ),
-                _buildShuffleButton(),
-              ],
-            ),
-          ),
-        ),
-        Positioned(
-          right: 50,
-          child: _buildPuzzleModeButtons(),
-        ),
-        Center(
-          child: _buildPuzzleBlocks(boxSize),
         ),
       ],
     );
@@ -364,6 +374,42 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
       ),
+    );
+  }
+
+  List<Widget> _buildBodyV2(double boxSize) {
+    return [
+      _buildTextRow(),
+      _buildPuzzleBlocks(boxSize),
+    ];
+  }
+
+  _buildTextRow() {
+    return Row(
+      children: [
+        Container(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Puzzle\nChallenge',
+                style: TextStyle(fontSize: 40),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              _buildMoveInfoText(),
+              const SizedBox(
+                height: 20,
+              ),
+              _buildShuffleButton(),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
