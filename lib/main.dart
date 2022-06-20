@@ -1,7 +1,6 @@
-import 'dart:html';
-
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
+import 'package:responsive_builder/responsive_builder.dart';
 
 void main() {
   runApp(const MyApp());
@@ -63,65 +62,44 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    var boxSize = MediaQuery.of(context).size.width * 0.3;
 
     if (listComparator.equals(blocks, sorted)) {
       isOver = true;
     }
 
     return Scaffold(
-      body: Center(
-        child: SizedBox(
-          width: boxSize,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Row(
-                children: [
-                  _buildShuffleButton(),
-                  const SizedBox(
-                    width: 20.0,
-                  ),
-                  _buildDropdown(dropdownValue),
-                ],
-              ),
-              const SizedBox(
-                height: 60.0,
-              ),
-              Text(
-                'Moves: $moves | Tiles: $range',
-                style: TextStyle(color: blockColor, fontSize: 30),
-              ),
-              const SizedBox(
-                height: 60.0,
-              ),
-              SizedBox(
-                width: boxSize,
-                height: boxSize,
-                child: GridView.count(
-                  crossAxisCount: rows,
-                  children: blocks.map((block) {
-                    var index = blocks.indexOf(block);
+      body: OrientationBuilder(
+        builder: (context, orientation) {
 
-                    if (isOver) {
-                      return card(
-                        color: block == 0 ? transparentColor : sortedColor,
-                        text: '$block',
-                        index: index,
-                      );
-                    }
+          double screenSize = MediaQuery.of(context).size.width;
+          double boxSize = screenSize * 0.2;
 
-                    return card(
-                      color: block == 0 ? transparentColor : blockColor,
-                      text: '$block',
-                      index: index,
-                    );
-                  }).toList(),
-                ),
-              ),
-            ],
-          ),
-        ),
+          if(orientation == Orientation.landscape) {
+            screenSize = MediaQuery.of(context).size.height;
+            boxSize = screenSize * 0.8;
+          }
+
+          return ResponsiveBuilder(
+            builder: (context, sizingInformation) {
+              if (sizingInformation.deviceScreenType ==
+                  DeviceScreenType.desktop) {
+                boxSize = screenSize * 0.4;
+              }
+
+              if (sizingInformation.deviceScreenType ==
+                  DeviceScreenType.tablet) {
+                boxSize = screenSize * 0.6;
+              }
+
+              if (sizingInformation.deviceScreenType ==
+                  DeviceScreenType.mobile) {
+                boxSize = screenSize * 0.8;
+              }
+
+              return _buildBody(boxSize);
+            },
+          );
+        },
       ),
     );
   }
@@ -133,14 +111,14 @@ class _MyHomePageState extends State<MyHomePage> {
       onTap: isOver
           ? null
           : () {
-        setState(
-              () {
-            if (allowedIndexes.contains(index)) {
-              move(index);
-            }
-          },
-        );
-      },
+              setState(
+                () {
+                  if (allowedIndexes.contains(index)) {
+                    move(index);
+                  }
+                },
+              );
+            },
       child: Opacity(
         opacity: transparent ? 0 : 1,
         child: Card(
@@ -150,11 +128,14 @@ class _MyHomePageState extends State<MyHomePage> {
           elevation: 2,
           color: color,
           child: Center(
-            child: Text(
-              text,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 70,
+            child: FittedBox(
+              fit: BoxFit.contain,
+              child: Text(
+                text,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 50,
+                ),
               ),
             ),
           ),
@@ -217,47 +198,6 @@ class _MyHomePageState extends State<MyHomePage> {
     indexAllowedIndexes();
   }
 
-  _buildDropdown(String dropdownValue) {
-    return Container(
-      width: 150,
-      child: DropdownButtonFormField<String>(
-        decoration: const InputDecoration(
-          border: OutlineInputBorder(),
-        ),
-        isExpanded: true,
-        value: dropdownValue,
-        icon: Icon(
-          Icons.arrow_drop_down_outlined,
-          color: blockColor,
-        ),
-        style: TextStyle(
-          color: blockColor,
-        ),
-        onChanged: (String? newValue) {
-          setState(() {
-            dropdownValue = newValue!;
-
-            var split = dropdownValue.split("x");
-            var number = int.parse(split[0]);
-
-            range = number * number;
-            rows = number;
-
-            isOver = false;
-            initGame();
-          });
-        },
-        items: <String>['3x3', '4x4', '5x5']
-            .map<DropdownMenuItem<String>>((String value) {
-          return DropdownMenuItem<String>(
-            value: value,
-            child: Text(value),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
   _buildShuffleButton() {
     return ElevatedButton.icon(
       icon: const Icon(Icons.refresh),
@@ -270,10 +210,159 @@ class _MyHomePageState extends State<MyHomePage> {
         });
       },
       style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(32.0),
         ),
+      ),
+    );
+  }
+
+  _buildBody(double boxSize) {
+    return Stack(
+      children: [
+        Container(
+          margin: const EdgeInsets.all(20.0),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.black, width: 1),
+          ),
+        ),
+
+        Positioned(
+          bottom: MediaQuery.of(context).size.height - 250,
+          child: Container(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Puzzle\nChallenge',
+                  style: TextStyle(fontSize: 40),
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                _buildMoveInfoText(),
+                const SizedBox(
+                  height: 20,
+                ),
+                _buildShuffleButton(),
+              ],
+            ),
+          ),
+        ),
+        Positioned(
+          right: 50,
+          child: _buildPuzzleModeButtons(),
+        ),
+        Center(
+          child: _buildPuzzleBlocks(boxSize),
+        ),
+      ],
+    );
+  }
+
+  _buildMoveInfoText() {
+    return Text(
+      'Moves: $moves  |  Tiles $range',
+      style: TextStyle(color: blockColor, fontSize: 20),
+    );
+  }
+
+  _buildPuzzleBlocks(boxSize) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.transparent),
+      ),
+      width: boxSize,
+      height: boxSize,
+      child: GridView.count(
+        crossAxisCount: rows,
+        children: blocks.map((block) {
+          var index = blocks.indexOf(block);
+
+          if (isOver) {
+            return card(
+              color: block == 0 ? transparentColor : sortedColor,
+              text: '$block',
+              index: index,
+            );
+          }
+
+          return card(
+            color: block == 0 ? transparentColor : blockColor,
+            text: '$block',
+            index: index,
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  _buildPuzzleModeButtons() {
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      padding: const EdgeInsets.all(10.0),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 30.0, vertical: 15.0),
+            ),
+            onPressed: () {
+              setState(() {
+                range = 3 * 3;
+                rows = 3;
+
+                isOver = false;
+                initGame();
+              });
+            },
+            child: const Text("3x3"),
+          ),
+          const SizedBox(
+            width: 5,
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 30.0, vertical: 15.0),
+            ),
+            onPressed: () {
+              setState(() {
+                range = 4 * 4;
+                rows = 4;
+
+                isOver = false;
+                initGame();
+              });
+            },
+            child: const Text("4x4"),
+          ),
+          const SizedBox(
+            width: 5,
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 30.0, vertical: 15.0),
+            ),
+            onPressed: () {
+              setState(() {
+                range = 5 * 5;
+                rows = 5;
+
+                isOver = false;
+                initGame();
+              });
+            },
+            child: const Text("5x5"),
+          ),
+        ],
       ),
     );
   }
